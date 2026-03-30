@@ -30,7 +30,14 @@ export default function Dashboard() {
       const formData = new FormData()
       formData.append('file', resumeFile)
       const uploadRes = await fetch('/api/resume/upload', { method: 'POST', body: formData })
-      if (!uploadRes.ok) throw new Error('Resume upload failed')
+      if (!uploadRes.ok) {
+        let detail = `Resume upload failed (${uploadRes.status})`
+        try {
+          const errJson = await uploadRes.json()
+          detail = errJson.detail || detail
+        } catch (_) {}
+        throw new Error(detail)
+      }
       const { resume_text } = await uploadRes.json()
 
       // Step 2: full analysis
@@ -39,7 +46,14 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resume_text, job_text: jobText }),
       })
-      if (!analysisRes.ok) throw new Error('Analysis failed')
+      if (!analysisRes.ok) {
+        let detail = `Analysis failed (${analysisRes.status})`
+        try {
+          const errJson = await analysisRes.json()
+          detail = errJson.detail || detail
+        } catch (_) {}
+        throw new Error(detail)
+      }
       const data = await analysisRes.json()
       setResult(data)
     } catch (err) {

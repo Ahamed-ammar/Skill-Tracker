@@ -8,8 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "backend": "cd ../backend && python -m uvicorn main:app --reload --port 8000 --log-level info",
-    "start": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"green,cyan\" \"npm run backend\" \"npm run dev\""
+    "backend": "py -m uvicorn main:app --reload --port 8000 --log-level info",
+    "start": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"green,cyan\" \"powershell -Command Set-Location ../backend; py -m uvicorn main:app --reload --port 8000 --log-level info\" \"npm run dev\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
