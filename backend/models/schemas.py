@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional
 
 
 class JobInput(BaseModel):
@@ -29,3 +29,25 @@ class AnalysisResult(BaseModel):
     job_skills: List[str]
     skill_gaps: List[SkillGap]
     roadmap: List[RoadmapItem]
+
+
+# ── Auth schemas ──────────────────────────────────────────────────────────────
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    created_at: str

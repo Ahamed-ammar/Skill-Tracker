@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
 
-from sqlalchemy import create_engine, Float, String, Text, Integer
+from sqlalchemy import create_engine, Float, String, Text, Integer, Boolean
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, Session
 
 log = logging.getLogger("curator.database")
@@ -47,6 +47,16 @@ engine = _build_engine()
 # ── ORM ───────────────────────────────────────────────────────────────────────
 class Base(DeclarativeBase):
     pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id:              Mapped[int]  = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email:           Mapped[str]  = mapped_column(String(255), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str]  = mapped_column(String(255), nullable=False)
+    is_active:       Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at:      Mapped[str]  = mapped_column(String(32), nullable=False)
 
 
 class AnalysisSession(Base):
@@ -104,3 +114,32 @@ def get_session(session_id: int) -> dict | None:
             "roadmap":       json.loads(record.roadmap),
             "created_at":    record.created_at,
         }
+
+
+def create_user(email: str, hashed_password: str) -> "User":
+    if engine is None:
+        raise RuntimeError("Database not configured")
+    with Session(engine) as session:
+        user = User(
+            email=email,
+            hashed_password=hashed_password,
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
+def get_user_by_email(email: str) -> "User | None":
+    if engine is None:
+        return None
+    with Session(engine) as session:
+        return session.query(User).filter(User.email == email).first()
+
+
+def get_user_by_id(user_id: int) -> "User | None":
+    if engine is None:
+        return None
+    with Session(engine) as session:
+        return session.get(User, user_id)
