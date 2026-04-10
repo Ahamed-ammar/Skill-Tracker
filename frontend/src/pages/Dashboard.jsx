@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef(null)
 
-  const { result, setResult, loading, setLoading, error, setError } = useAnalysis()
+  const { result, setResult, loading, setLoading, error, setError, setJobs } = useAnalysis()
 
   const handleFileDrop = (e) => {
     e.preventDefault()
@@ -24,6 +24,7 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     setResult(null)
+    setJobs(null)  // clear cached jobs so a fresh search runs for the new job title
 
     try {
       // Step 1: upload resume → get text
