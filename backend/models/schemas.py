@@ -51,3 +51,21 @@ class UserOut(BaseModel):
     id: int
     email: str
     created_at: str
+
+
+# ── Study Plan schemas ────────────────────────────────────────────────────────
+class StudyPlanSummary(BaseModel):
+    id: int
+    name: str
+    created_at: str
+
+
+class StudyPlanDetail(BaseModel):
+    id: int
+    name: str
+    match_score: float
+    resume_skills: List[str]
+    job_skills: List[str]
+    skill_gaps: List[SkillGap]
+    roadmap: List[RoadmapItem]
+    created_at: str

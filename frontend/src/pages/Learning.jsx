@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAnalysis } from '../context/AnalysisContext'
-import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const statusConfig = {
   'in-progress': { dot: 'bg-[#506454]', label: 'In Progress', badge: 'bg-[#d2e8d4] text-[#435647]' },
@@ -8,10 +10,74 @@ const statusConfig = {
 }
 
 export default function Learning() {
+  const { planId } = useParams()
   const { result } = useAnalysis()
+  const { token } = useAuth()
   const navigate = useNavigate()
-  const weekPlan = result?.roadmap ?? []
 
+  const [planData, setPlanData] = useState(null)
+  const [fetchState, setFetchState] = useState('idle') // idle | loading | error | forbidden | notfound
+
+  useEffect(() => {
+    if (!planId) return
+    setFetchState('loading')
+    setPlanData(null)
+    fetch(`/api/study-plans/${planId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        if (r.status === 403) { setFetchState('forbidden'); return null }
+        if (r.status === 404) { setFetchState('notfound'); return null }
+        if (!r.ok) { setFetchState('error'); return null }
+        return r.json()
+      })
+      .then(data => { if (data) { setPlanData(data); setFetchState('idle') } })
+      .catch(() => setFetchState('error'))
+  }, [planId, token])
+
+  // Determine which roadmap to show
+  const weekPlan = planId
+    ? (planData?.roadmap ?? [])
+    : (result?.roadmap ?? [])
+
+  const planName = planId ? planData?.name : null
+
+  // Loading state for plan fetch
+  if (planId && fetchState === 'loading') {
+    return (
+      <main className="pt-32 pb-20 px-8 max-w-[1600px] mx-auto dot-grid min-h-screen flex flex-col items-center justify-center">
+        <span className="material-symbols-outlined text-5xl text-[#afb3b0] animate-spin mb-4">autorenew</span>
+        <p className="text-[#5c605e] font-['Inter'] text-sm">Loading study plan...</p>
+      </main>
+    )
+  }
+
+  // Error states
+  if (planId && fetchState === 'forbidden') {
+    return (
+      <main className="pt-32 pb-20 px-8 max-w-[1600px] mx-auto dot-grid min-h-screen flex flex-col items-center justify-center">
+        <span className="material-symbols-outlined text-6xl text-[#afb3b0] mb-6">lock</span>
+        <h2 className="font-['Newsreader'] text-2xl text-[#2f3332] mb-3">Access Denied</h2>
+        <p className="text-[#5c605e] font-['Inter'] text-sm mb-8">This study plan doesn't belong to your account.</p>
+        <button onClick={() => navigate('/learning')} className="bg-[#506454] text-[#e8ffea] px-6 py-3 rounded-full font-['Inter'] text-xs tracking-widest uppercase hover:opacity-90 transition-opacity">
+          Back to Learning
+        </button>
+      </main>
+    )
+  }
+
+  if (planId && (fetchState === 'notfound' || fetchState === 'error')) {
+    return (
+      <main className="pt-32 pb-20 px-8 max-w-[1600px] mx-auto dot-grid min-h-screen flex flex-col items-center justify-center">
+        <span className="material-symbols-outlined text-6xl text-[#afb3b0] mb-6">search_off</span>
+        <h2 className="font-['Newsreader'] text-2xl text-[#2f3332] mb-3">Plan Not Found</h2>
+        <p className="text-[#5c605e] font-['Inter'] text-sm mb-8">This study plan could not be loaded.</p>
+        <button onClick={() => navigate('/learning')} className="bg-[#506454] text-[#e8ffea] px-6 py-3 rounded-full font-['Inter'] text-xs tracking-widest uppercase hover:opacity-90 transition-opacity">
+          Back to Learning
+        </button>
+      </main>
+    )
+  }
+
+  // Empty state
   if (!weekPlan.length) {
     return (
       <main className="pt-32 pb-20 px-8 max-w-[1600px] mx-auto dot-grid min-h-screen flex flex-col items-center justify-center">
@@ -41,7 +107,9 @@ export default function Learning() {
           <span className="material-symbols-outlined text-sm">auto_stories</span>
           Learning Roadmap
         </div>
-        <h1 className="font-['Newsreader'] text-4xl font-semibold text-[#2f3332] mb-2">Your 7-Day Skill Plan</h1>
+        <h1 className="font-['Newsreader'] text-4xl font-semibold text-[#2f3332] mb-2">
+          {planName ?? 'Your 7-Day Skill Plan'}
+        </h1>
         <p className="text-[#5c605e] font-['Inter']">Personalized based on your skill gap analysis.</p>
       </div>
 

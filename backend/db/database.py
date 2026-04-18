@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone
 from urllib.parse import urlparse, parse_qs
 
-from sqlalchemy import create_engine, Float, String, Text, Integer, Boolean
+from sqlalchemy import create_engine, Float, String, Text, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, Session
 
 log = logging.getLogger("curator.database")
@@ -63,6 +63,20 @@ class AnalysisSession(Base):
     __tablename__ = "analysis_sessions"
 
     id:            Mapped[int]   = mapped_column(Integer, primary_key=True, autoincrement=True)
+    match_score:   Mapped[float] = mapped_column(Float,   nullable=False)
+    resume_skills: Mapped[str]   = mapped_column(Text,    nullable=False)
+    job_skills:    Mapped[str]   = mapped_column(Text,    nullable=False)
+    skill_gaps:    Mapped[str]   = mapped_column(Text,    nullable=False)
+    roadmap:       Mapped[str]   = mapped_column(Text,    nullable=False)
+    created_at:    Mapped[str]   = mapped_column(String(32), nullable=False)
+
+
+class StudyPlan(Base):
+    __tablename__ = "study_plans"
+
+    id:            Mapped[int]   = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id:       Mapped[int]   = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name:          Mapped[str]   = mapped_column(String(255), nullable=False)
     match_score:   Mapped[float] = mapped_column(Float,   nullable=False)
     resume_skills: Mapped[str]   = mapped_column(Text,    nullable=False)
     job_skills:    Mapped[str]   = mapped_column(Text,    nullable=False)
@@ -143,3 +157,60 @@ def get_user_by_id(user_id: int) -> "User | None":
         return None
     with Session(engine) as session:
         return session.get(User, user_id)
+
+
+def save_study_plan(user_id: int, name: str, match_score: float,
+                    resume_skills: list, job_skills: list,
+                    skill_gaps: list, roadmap: list) -> int:
+    if engine is None:
+        return -1
+    with Session(engine) as session:
+        record = StudyPlan(
+            user_id=user_id,
+            name=name,
+            match_score=match_score,
+            resume_skills=json.dumps(resume_skills),
+            job_skills=json.dumps(job_skills),
+            skill_gaps=json.dumps(skill_gaps),
+            roadmap=json.dumps(roadmap),
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+        session.add(record)
+        session.commit()
+        session.refresh(record)
+        log.info("Saved study plan id=%d user_id=%d", record.id, user_id)
+        return record.id
+
+
+def get_study_plans(user_id: int) -> list:
+    if engine is None:
+        return []
+    with Session(engine) as session:
+        records = (
+            session.query(StudyPlan)
+            .filter(StudyPlan.user_id == user_id)
+            .order_by(StudyPlan.created_at.desc())
+            .all()
+        )
+        return [{"id": r.id, "name": r.name, "created_at": r.created_at} for r in records]
+
+
+def get_study_plan(plan_id: int, user_id: int) -> dict | None:
+    if engine is None:
+        return None
+    with Session(engine) as session:
+        record = session.get(StudyPlan, plan_id)
+        if not record:
+            return None
+        if record.user_id != user_id:
+            return {"_forbidden": True}
+        return {
+            "id":            record.id,
+            "name":          record.name,
+            "match_score":   record.match_score,
+            "resume_skills": json.loads(record.resume_skills),
+            "job_skills":    json.loads(record.job_skills),
+            "skill_gaps":    json.loads(record.skill_gaps),
+            "roadmap":       json.loads(record.roadmap),
+            "created_at":    record.created_at,
+        }

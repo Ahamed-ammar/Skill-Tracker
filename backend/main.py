@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import resume, job, analysis
 from routers.jobs_search import router as jobs_search_router
 from routers.auth import router as auth_router
+from routers.study_plans import router as study_plans_router
 from db.database import init_db
 
 # ── Logging setup ────────────────────────────────────────────────────────────
@@ -29,11 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router,         prefix="/api/auth",    tags=["Auth"])
-app.include_router(resume.router,       prefix="/api/resume",  tags=["Resume"])
-app.include_router(job.router,          prefix="/api/job",     tags=["Job"])
-app.include_router(analysis.router,     prefix="/api/analyze", tags=["Analysis"])
-app.include_router(jobs_search_router,  prefix="/api/jobs",    tags=["Jobs Search"])
+app.include_router(auth_router,         prefix="/api/auth",         tags=["Auth"])
+app.include_router(resume.router,       prefix="/api/resume",       tags=["Resume"])
+app.include_router(job.router,          prefix="/api/job",          tags=["Job"])
+app.include_router(analysis.router,     prefix="/api/analyze",      tags=["Analysis"])
+app.include_router(jobs_search_router,  prefix="/api/jobs",         tags=["Jobs Search"])
+app.include_router(study_plans_router,  prefix="/api/study-plans",  tags=["Study Plans"])
 
 
 # ── Request logger middleware ─────────────────────────────────────────────────

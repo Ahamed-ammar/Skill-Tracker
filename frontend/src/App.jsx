@@ -31,6 +31,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/learning" element={<Learning />} />
+                      <Route path="/learning/:planId" element={<Learning />} />
                       <Route path="/tracker" element={<Tracker />} />
                       <Route path="*" element={<Dashboard />} />
                     </Routes>

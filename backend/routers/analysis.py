@@ -1,19 +1,20 @@
 import logging
-from fastapi import APIRouter, HTTPException
-from models.schemas import AnalysisInput
+from fastapi import APIRouter, HTTPException, Depends
+from models.schemas import AnalysisInput, UserOut
 from services.skill_extractor import extract_resume_skills
 from services.job_parser import extract_job_skills
 from services.matching_engine import compute_match_score
 from services.gap_analyzer import find_skill_gaps
 from services.mentor_agent import generate_roadmap
-from db.database import save_session
+from db.database import save_session, save_study_plan
+from routers.auth import get_current_user
 
 log = logging.getLogger("curator.analysis")
 router = APIRouter()
 
 
 @router.post("/full")
-async def full_analysis(payload: AnalysisInput):
+async def full_analysis(payload: AnalysisInput, current_user: UserOut = Depends(get_current_user)):
     """POST /api/analyze/full — full pipeline in one call"""
     log.info("full_analysis: resume=%d chars  job=%d chars",
              len(payload.resume_text), len(payload.job_text))
@@ -57,9 +58,14 @@ async def full_analysis(payload: AnalysisInput):
         raise HTTPException(500, f"Analysis failed: {e}")
 
     # Persist (non-blocking)
+    plan_id = -1
     try:
-        sid = save_session(match_score, resume_skills, job_skills, gaps, roadmap)
-        log.info("full_analysis: saved session id=%d", sid)
+        plan_name = f"{job_title} Plan" if job_title else "Study Plan"
+        plan_id = save_study_plan(
+            current_user.id, plan_name, match_score,
+            resume_skills, job_skills, gaps, roadmap
+        )
+        log.info("full_analysis: saved study plan id=%d", plan_id)
     except Exception as e:
         log.warning("full_analysis: DB save failed (non-fatal): %s", e)
 
@@ -71,4 +77,5 @@ async def full_analysis(payload: AnalysisInput):
         "job_title":     job_title,
         "skill_gaps":    gaps,
         "roadmap":       roadmap,
+        "plan_id":       plan_id,
     }
