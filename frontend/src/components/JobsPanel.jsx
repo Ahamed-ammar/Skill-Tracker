@@ -17,7 +17,7 @@ export default function JobsPanel({ jobTitle = '' }) {
       } catch (err) {
         setJobs([])  // cache empty array so we don't retry on every navigation
       }
-    }
+    }  
 
     fetchJobs()
   }, [jobTitle, jobs, setJobs])
