@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useAnalysis } from '../context/AnalysisContext'
+import { useAuth } from '../context/AuthContext'
 import MatchGauge from '../components/MatchGauge'
 import JobsPanel from '../components/JobsPanel'
 import Roadmap from '../components/Roadmap'
@@ -10,7 +11,8 @@ export default function Dashboard() {
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef(null)
 
-  const { result, setResult, loading, setLoading, error, setError } = useAnalysis()
+  const { result, setResult, loading, setLoading, error, setError, setJobs, setPlanId } = useAnalysis()
+  const { token } = useAuth()
 
   const handleFileDrop = (e) => {
     e.preventDefault()
@@ -24,6 +26,7 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     setResult(null)
+    setJobs(null)  // clear cached jobs so a fresh search runs for the new job title
 
     try {
       // Step 1: upload resume → get text
@@ -43,7 +46,10 @@ export default function Dashboard() {
       // Step 2: full analysis
       const analysisRes = await fetch('/api/analyze/full', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ resume_text, job_text: jobText }),
       })
       if (!analysisRes.ok) {
@@ -56,6 +62,7 @@ export default function Dashboard() {
       }
       const data = await analysisRes.json()
       setResult(data)
+      if (data.plan_id && data.plan_id !== -1) setPlanId(data.plan_id)
     } catch (err) {
       setError(err.message || 'Something went wrong. Make sure the backend is running.')
     } finally {

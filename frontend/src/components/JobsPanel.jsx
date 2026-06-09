@@ -1,31 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useAnalysis } from '../context/AnalysisContext'
 
-// Fetches live jobs from RapidAPI based on the job title extracted from analysis
 export default function JobsPanel({ jobTitle = '' }) {
-  const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const { jobs, setJobs } = useAnalysis()
 
+  // Only fetch if we don't already have cached results
   useEffect(() => {
-    if (!jobTitle) return
+    if (!jobTitle || jobs !== null) return
 
     const fetchJobs = async () => {
-      setLoading(true)
-      setError(null)
       try {
         const res = await fetch(`/api/jobs/search?query=${encodeURIComponent(jobTitle)}&location=Remote&page=1`)
         if (!res.ok) throw new Error('Job search failed')
         const data = await res.json()
-        setJobs(data.jobs.slice(0, 5))  // top 5
+        setJobs(data.jobs.slice(0, 5))
       } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
+        setJobs([])  // cache empty array so we don't retry on every navigation
       }
-    }
+    }  
 
     fetchJobs()
-  }, [jobTitle])
+  }, [jobTitle, jobs, setJobs])
+
+  const loading = jobs === null && !!jobTitle
 
   return (
     <div className="col-span-12 md:col-span-8 bg-white rounded-[1rem] p-8 shadow-sm">
@@ -42,18 +39,11 @@ export default function JobsPanel({ jobTitle = '' }) {
         </div>
       )}
 
-      {error && (
-        <div className="flex items-center gap-3 p-4 bg-[#fa746f]/10 rounded-[1rem] text-[#a83836]">
-          <span className="material-symbols-outlined">error</span>
-          <span className="text-sm">{error}</span>
-        </div>
-      )}
-
-      {!loading && !error && jobs.length === 0 && (
+      {!loading && jobs !== null && jobs.length === 0 && (
         <p className="text-sm text-[#5c605e] italic">No jobs found. Try a different search.</p>
       )}
 
-      {!loading && jobs.length > 0 && (
+      {!loading && jobs && jobs.length > 0 && (
         <div className="space-y-3">
           {jobs.map((job) => (
             <div key={job.id} className="p-4 bg-[#f3f4f2] rounded-[1rem] hover:bg-[#d2e8d4]/20 transition-colors">
