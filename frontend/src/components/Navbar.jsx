@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 
 const links = [
   { label: 'Dashboard', to: '/' },
-  { label: 'Learning', to: '/learning' },
+  { label: 'Plans', to: '/plans' },
   { label: 'Tracker', to: '/tracker' },
 ]
 
