@@ -71,36 +71,9 @@ router.post(
         // 4 — skill gaps
         console.log("  [4/5] finding skill gaps…");
         gaps = await findSkillGaps(resume_skills, job_skills);
-        console.log(
-          `  [4/5] ${gaps.length} gaps:`,
-          gaps.map((g) => g.skill)
-        );
-
-        // 5 — roadmap
-        console.log("  [5/5] generating roadmap…");
-        roadmap = await generateRoadmap(gaps.map((g) => g.skill));
-        console.log(`  [5/5] roadmap has ${roadmap.length} entries`);
       } catch (e) {
         console.error("[analysis] pipeline failed:", e);
         return res.status(500).json({ detail: `Analysis failed: ${e.message}` });
-      }
-
-      // Persist (non-blocking)
-      let plan_id = -1;
-      try {
-        const plan_name = job_title ? `${job_title} Plan` : "Study Plan";
-        plan_id = await saveStudyPlan(
-          req.user.id,
-          plan_name,
-          match_score,
-          resume_skills,
-          job_skills,
-          gaps,
-          roadmap
-        );
-        console.log(`[analysis] saved study plan id=${plan_id}`);
-      } catch (e) {
-        console.warn(`[analysis] DB save failed (non-fatal): ${e.message}`);
       }
 
       console.log("[analysis] done ✅");
@@ -110,8 +83,8 @@ router.post(
         job_skills,
         job_title,
         skill_gaps: gaps,
-        roadmap,
-        plan_id,
+        roadmap: [],
+        plan_id: -1,
       });
     } catch (err) {
       next(err);

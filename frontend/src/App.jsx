@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Learning from './pages/Learning'
 import Tracker from './pages/Tracker'
+import Plans from './pages/Plans'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import './App.css'
@@ -30,6 +31,7 @@ function App() {
                   <div className="xl:pl-72">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/plans" element={<Plans />} />
                       <Route path="/learning" element={<Learning />} />
                       <Route path="/learning/:planId" element={<Learning />} />
                       <Route path="/tracker" element={<Tracker />} />

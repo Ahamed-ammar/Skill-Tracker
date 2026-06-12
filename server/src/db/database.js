@@ -166,3 +166,12 @@ export async function getStudyPlan(planId, userId) {
     created_at: record.created_at,
   };
 }
+
+export async function deleteStudyPlan(planId, userId) {
+  if (!pool) return false;
+  const { rowCount } = await pool.query(
+    "DELETE FROM study_plans WHERE id = $1 AND user_id = $2",
+    [planId, userId]
+  );
+  return rowCount > 0;
+}

@@ -1,5 +1,5 @@
 // Circular SVG gauge + skill gaps stacked below
-export default function MatchGauge({ score = 0, gaps = [] }) {
+export default function MatchGauge({ score = 0, gaps = [], onGeneratePlan, isGeneratingPlan }) {
   const radius = 88
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
@@ -32,6 +32,18 @@ export default function MatchGauge({ score = 0, gaps = [] }) {
           </div>
         </div>
         <p className="mt-4 text-xs text-center text-[#5c605e] italic">{scoreLabel}</p>
+        {onGeneratePlan && (
+          <button
+            onClick={onGeneratePlan}
+            disabled={isGeneratingPlan}
+            className={`mt-6 px-6 py-2.5 rounded-full font-['Inter'] text-xs tracking-widest uppercase transition-all duration-300
+              ${isGeneratingPlan
+                ? 'bg-[#afb3b0]/30 text-[#afb3b0] cursor-not-allowed'
+                : 'bg-[#506454] text-[#e8ffea] hover:opacity-90 shadow-md'}`}
+          >
+            {isGeneratingPlan ? 'Generating...' : 'Create Study Plan'}
+          </button>
+        )}
       </div>
 
       {/* Skill gaps below gauge */}

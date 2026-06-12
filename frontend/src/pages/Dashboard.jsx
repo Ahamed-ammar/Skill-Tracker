@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAnalysis } from '../context/AnalysisContext'
 import { useAuth } from '../context/AuthContext'
 import MatchGauge from '../components/MatchGauge'
@@ -9,10 +10,45 @@ export default function Dashboard() {
   const [resumeFile, setResumeFile] = useState(null)
   const [jobText, setJobText] = useState('')
   const [dragOver, setDragOver] = useState(false)
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false)
   const fileInputRef = useRef(null)
+  const navigate = useNavigate()
 
   const { result, setResult, loading, setLoading, error, setError, setJobs, setPlanId } = useAnalysis()
   const { token } = useAuth()
+
+  const handleGeneratePlan = async () => {
+    if (!result) return
+    setIsGeneratingPlan(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/study-plans/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          match_score: result.match_score,
+          resume_skills: result.resume_skills,
+          job_skills: result.job_skills,
+          job_title: result.job_title,
+          skill_gaps: result.skill_gaps
+        })
+      })
+      if (!res.ok) {
+        throw new Error('Failed to generate study plan')
+      }
+      const data = await res.json()
+      
+      // Navigate to /plans
+      navigate('/plans')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsGeneratingPlan(false)
+    }
+  }
 
   const handleFileDrop = (e) => {
     e.preventDefault()
@@ -232,7 +268,12 @@ export default function Dashboard() {
           <div className="relative z-10 space-y-8">
             {/* Row 1: Gauge+Gaps | Jobs */}
             <div className="grid grid-cols-12 gap-8">
-              <MatchGauge score={result.match_score} gaps={result.skill_gaps} />
+              <MatchGauge 
+                score={result.match_score} 
+                gaps={result.skill_gaps} 
+                onGeneratePlan={handleGeneratePlan}
+                isGeneratingPlan={isGeneratingPlan}
+              />
               <JobsPanel jobTitle={result.job_title} />
             </div>
             {/* Row 2: Roadmap full width */}
