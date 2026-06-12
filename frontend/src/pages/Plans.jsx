@@ -26,6 +26,26 @@ export default function Plans() {
     catch { return '' }
   }
 
+  const handleDelete = async (e, planId) => {
+    e.stopPropagation()
+    if (!window.confirm('Are you sure you want to delete this study plan?')) return
+
+    try {
+      const res = await fetch(`/api/study-plans/${planId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        setPlans(plans.filter(p => p.id !== planId))
+      } else {
+        console.error('Failed to delete plan')
+      }
+    } catch (err) {
+      console.error('Error deleting plan:', err)
+    }
+  }
+
+
   if (loading) {
     return (
       <main className="pt-32 pb-20 px-8 max-w-[1600px] mx-auto dot-grid min-h-screen flex flex-col items-center justify-center">
@@ -74,9 +94,18 @@ export default function Plans() {
                 <div className="bg-[#f3f4f2] w-12 h-12 rounded-full flex items-center justify-center text-[#506454]">
                   <span className="material-symbols-outlined">auto_stories</span>
                 </div>
-                <span className="text-[10px] font-['Inter'] uppercase tracking-widest text-[#5c605e]">
-                  {formatDate(plan.created_at)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-['Inter'] uppercase tracking-widest text-[#5c605e]">
+                    {formatDate(plan.created_at)}
+                  </span>
+                  <button 
+                    onClick={(e) => handleDelete(e, plan.id)}
+                    className="text-[#afb3b0] hover:text-red-500 transition-colors flex items-center justify-center"
+                    title="Delete Plan"
+                  >
+                    <span className="material-symbols-outlined text-lg">delete</span>
+                  </button>
+                </div>
               </div>
               <h3 className="font-['Newsreader'] text-xl font-semibold text-[#2f3332] mb-2 line-clamp-2">
                 {plan.name}

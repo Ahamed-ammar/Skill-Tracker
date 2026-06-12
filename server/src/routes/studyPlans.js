@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "./auth.js";
-import { getStudyPlans, getStudyPlan, saveStudyPlan } from "../db/database.js";
+import { getStudyPlans, getStudyPlan, saveStudyPlan, deleteStudyPlan } from "../db/database.js";
 import { generateRoadmap } from "../services/mentorAgent.js";
 
 const router = Router();
@@ -63,6 +63,25 @@ router.post("/generate", authenticateToken, async (req, res, next) => {
 
     console.log(`[studyPlans] generated and saved plan id=${plan_id}`);
     res.json({ plan_id, roadmap });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── DELETE /api/study-plans/:plan_id ──────────────────────────────────────────
+router.delete("/:plan_id", authenticateToken, async (req, res, next) => {
+  try {
+    const planId = parseInt(req.params.plan_id, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ detail: "Invalid plan ID" });
+    }
+
+    const success = await deleteStudyPlan(planId, req.user.id);
+    if (!success) {
+      return res.status(404).json({ detail: "Study plan not found or not authorized" });
+    }
+
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
